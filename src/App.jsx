@@ -1924,7 +1924,7 @@ export default function ExecutiveApp() {
                 PRODUCT MANAGEMENT • EXECUTIVE VIEW
               </div>
               <h2 className={`text-[#002B5C] ${typography.h1} mb-4`}>
-                داشبورد مدیریتی
+                داشبورد محصولات سداد
               </h2>
               <p className="text-gray-600 text-lg">
                 لطفاً برای مشاهده جزئیات، بخش مورد نظر را انتخاب کنید
