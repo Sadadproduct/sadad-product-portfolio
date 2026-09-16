@@ -1,0 +1,15 @@
+node_modules
+dist
+.vite
+.DS_Store
+.env
+.env.*
+!.env.example
+server/data/*.db
+server/data/*.db-*
+server/data/backups/
+*.dump
+*.sql.gz
+logs
+*.log
+.vercel
