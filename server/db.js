@@ -6,6 +6,8 @@ import pg from 'pg';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, 'presentation.db');
+/** ESM URL form helps Vercel NFT include the SQL file; includeFiles is also set in vercel.json. */
+const PG_SCHEMA_URL = new URL('./sql/schema.postgres.sql', import.meta.url);
 const PG_SCHEMA_PATH = path.join(__dirname, 'sql', 'schema.postgres.sql');
 
 const { Pool } = pg;
@@ -447,7 +449,12 @@ async function migrateSqlite(db) {
 }
 
 async function migratePostgres(db) {
-  const schema = fs.readFileSync(PG_SCHEMA_PATH, 'utf8');
+  let schema;
+  try {
+    schema = fs.readFileSync(PG_SCHEMA_URL, 'utf8');
+  } catch {
+    schema = fs.readFileSync(PG_SCHEMA_PATH, 'utf8');
+  }
   await db.exec(schema);
   await seedEditorialContentIfEmpty(db);
 }
