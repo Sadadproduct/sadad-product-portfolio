@@ -70,7 +70,7 @@ export default function AuditPage() {
         </Select>
         <Select value={entity} onChange={(e) => { setPage(1); setEntity(e.target.value); }} className="w-44">
           <option value="">همه بخش‌ها</option>
-          {['users','products','portfolio_categories','pdi_statuses','committee_periods','backlog_systems','strategic_impacts','committee_insights','backlog_insights','home_menu_items','decision_proposals','process_tracks','outlook_pillars','app_settings'].map((e) => (
+          {['users','products','product_content_cards','portfolio_categories','pdi_statuses','committee_periods','backlog_systems','strategic_impacts','committee_insights','backlog_insights','home_menu_items','decision_proposals','process_tracks','outlook_pillars','app_settings'].map((e) => (
             <option key={e} value={e}>{e}</option>
           ))}
         </Select>

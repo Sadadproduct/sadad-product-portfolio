@@ -30,6 +30,9 @@ export default function ResourcePage({
   toForm,
   fromForm,
   validate,
+  queryParams = null,
+  rowActions = null,
+  hidePageHeader = false,
 }) {
   const { user } = useAuth();
   const canDelete = user?.role === 'admin';
@@ -47,6 +50,11 @@ export default function ResourcePage({
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      if (queryParams) {
+        Object.entries(queryParams).forEach(([k, v]) => {
+          if (v != null && v !== '') params.set(k, String(v));
+        });
+      }
       if (q) params.set('q', q);
       if (activeFilter !== 'all') params.set('active', activeFilter);
       const qs = params.toString() ? `?${params}` : '';
@@ -57,7 +65,7 @@ export default function ResourcePage({
     } finally {
       setLoading(false);
     }
-  }, [endpoint, q, activeFilter]);
+  }, [endpoint, q, activeFilter, JSON.stringify(queryParams || {})]);
 
   useEffect(() => {
     load();
@@ -166,26 +174,33 @@ export default function ResourcePage({
   return (
     <div>
       {node}
-      <PageHeader
-        title={title}
-        subtitle={subtitle}
-        actions={
-          <>
-            <Input
-              placeholder={searchPlaceholder}
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="min-w-[200px]"
-            />
-            <Select value={activeFilter} onChange={(e) => setActiveFilter(e.target.value)} className="w-36">
-              <option value="all">همه</option>
-              <option value="1">فعال</option>
-              <option value="0">غیرفعال</option>
-            </Select>
-            <Button onClick={openCreate}>{newLabel}</Button>
-          </>
-        }
-      />
+      {!hidePageHeader && (
+        <PageHeader
+          title={title}
+          subtitle={subtitle}
+          actions={
+            <>
+              <Input
+                placeholder={searchPlaceholder}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                className="min-w-[200px]"
+              />
+              <Select value={activeFilter} onChange={(e) => setActiveFilter(e.target.value)} className="w-36">
+                <option value="all">همه</option>
+                <option value="1">فعال</option>
+                <option value="0">غیرفعال</option>
+              </Select>
+              <Button onClick={openCreate}>{newLabel}</Button>
+            </>
+          }
+        />
+      )}
+      {hidePageHeader && (
+        <div className="flex flex-wrap gap-2 mb-4 justify-end">
+          <Button onClick={openCreate}>{newLabel}</Button>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         {loading ? (
@@ -215,6 +230,7 @@ export default function ResourcePage({
                     ))}
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex flex-wrap gap-2">
+                        {rowActions ? rowActions(row, { load, show }) : null}
                         <Button variant="secondary" onClick={() => openEdit(row)}>
                           ویرایش
                         </Button>
@@ -308,6 +324,33 @@ export default function ResourcePage({
                 />
                 {f.label}
               </label>
+            );
+          }
+          if (f.type === 'color') {
+            const hex = form[f.name] || '#0057A8';
+            return (
+              <div key={f.name} className="space-y-2">
+                <span className="block text-sm text-slate-600 font-medium">{f.label}</span>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={/^#[0-9A-Fa-f]{6}$/.test(hex) ? hex : '#0057A8'}
+                    onChange={(e) => setForm((s) => ({ ...s, [f.name]: e.target.value }))}
+                    className="h-10 w-14 rounded border border-slate-200 cursor-pointer bg-white"
+                  />
+                  <Input
+                    value={form[f.name] ?? ''}
+                    placeholder="#0057A8"
+                    onChange={(e) => setForm((s) => ({ ...s, [f.name]: e.target.value }))}
+                    className="flex-1"
+                  />
+                  <span
+                    className="inline-block w-8 h-8 rounded-lg border border-slate-200"
+                    style={{ background: form[f.name] || '#e5e7eb' }}
+                    title="پیش‌نمایش"
+                  />
+                </div>
+              </div>
             );
           }
           return (

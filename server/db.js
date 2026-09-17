@@ -393,8 +393,26 @@ async function migrateSqlite(db) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS product_content_cards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      image_url TEXT NOT NULL DEFAULT '',
+      icon_key TEXT NOT NULL DEFAULT 'Layers',
+      color TEXT NOT NULL DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      is_published INTEGER NOT NULL DEFAULT 1,
+      draft_json TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
     CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active, is_published);
+    CREATE INDEX IF NOT EXISTS idx_product_content_cards_product ON product_content_cards(product_id);
     CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at);
   `);
 
@@ -422,6 +440,7 @@ async function migrateSqlite(db) {
     'backlog_insights',
     'home_menu_items',
     'decision_proposals',
+    'product_content_cards',
   ];
   for (const t of draftTables) {
     await ensureColumn(db, t, 'draft_json', 'draft_json TEXT');

@@ -74,7 +74,7 @@ export function buildFallbackPresentation() {
       title: cat.title,
       count: cat.products.length,
       icon: resolveIcon(cat.icon),
-      products: cat.products.map((p) => ({ ...p })),
+      products: cat.products.map((p) => ({ ...p, contentCards: p.contentCards || [] })),
     };
   }
 
@@ -166,6 +166,7 @@ export function mapApiPresentation(api) {
         kpi: p.kpi,
         nature: p.nature,
         description: p.description || '',
+        contentCards: p.contentCards || p.content_cards || [],
       })),
     };
   }

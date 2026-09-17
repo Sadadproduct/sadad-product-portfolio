@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { usePresentation } from './data/PresentationProvider.jsx';
+import { resolveIcon } from './data/iconRegistry.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronRight, Home, Menu as MenuIcon, ArrowRight, Layers, 
@@ -427,6 +428,8 @@ const ProductDetailView = ({ categoryKey, productId, onBack }) => {
     );
   }
 
+  const contentCards = Array.isArray(product.contentCards) ? product.contentCards : [];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -463,6 +466,52 @@ const ProductDetailView = ({ categoryKey, productId, onBack }) => {
           </div>
         ) : null}
       </div>
+
+      {contentCards.length > 0 ? (
+        <div className="mt-8 space-y-4">
+          <h3 className="text-[#002B5C] text-xl font-bold">کادرهای محتوایی</h3>
+          <div className="grid grid-cols-1 gap-4">
+            {contentCards.map((card) => {
+              const Icon = resolveIcon(card.icon);
+              const accent = card.color || COLORS.primaryBlue;
+              return (
+                <div
+                  key={card.id}
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                  style={{ borderTopWidth: 4, borderTopColor: accent }}
+                >
+                  {card.imageUrl ? (
+                    <div className="w-full bg-gray-50 border-b border-gray-100">
+                      <img
+                        src={card.imageUrl}
+                        alt={card.title || ''}
+                        className="w-full max-h-56 object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : null}
+                  <div className="p-5 md:p-6">
+                    <div className="flex items-start gap-3 mb-2">
+                      {card.icon ? (
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: `${accent}18`, color: accent }}
+                        >
+                          <Icon size={20} />
+                        </div>
+                      ) : null}
+                      <h4 className="text-lg font-bold text-[#002B5C] leading-7">{card.title}</h4>
+                    </div>
+                    {card.description ? (
+                      <p className="text-gray-700 leading-8 text-sm whitespace-pre-wrap">{card.description}</p>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </motion.div>
   );
 };

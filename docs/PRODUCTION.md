@@ -52,10 +52,11 @@ npm run db:backup
 
 ```bash
 export DATABASE_URL='postgresql://...'
-npm run db:migrate
+DRY_RUN=1 npm run db:migrate   # inventory only — no Postgres writes
+npm run db:migrate             # apply schema + insert missing rows
 ```
 
-Idempotent: uses `ON CONFLICT DO UPDATE`. Password hashes are copied as-is (not re-hashed).
+Safe / idempotent: `INSERT ... ON CONFLICT DO NOTHING` (does not overwrite existing Postgres rows). Password hashes are copied as-is (not re-hashed). SQLite is read-only during migrate.
 
 4. Verify counts:
 

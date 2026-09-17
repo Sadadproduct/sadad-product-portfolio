@@ -69,6 +69,7 @@ export function CategoriesPage() {
 
 export function ProductsPage() {
   const [categories, setCategories] = useState([]);
+  const [cardsProduct, setCardsProduct] = useState(null);
   useEffect(() => {
     api.get('/api/admin/categories').then((r) => setCategories(r.items || []));
   }, []);
@@ -76,68 +77,183 @@ export function ProductsPage() {
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c.title]));
 
   return (
-    <ResourcePage
-      title="محصولات"
-      subtitle="مدیریت جزئیات محصولات پرتفوی"
-      endpoint="/api/admin/products"
-      newLabel="محصول جدید"
-      columns={[
-        { key: 'name', label: 'نام' },
-        { key: 'category_id', label: 'دسته', render: (r) => catMap[r.category_id] || r.category_id },
-        { key: 'status', label: 'وضعیت' },
-        { key: 'nature', label: 'ماهیت' },
-        { key: 'kpi', label: 'KPI' },
-        { key: 'is_active', label: 'فعال', render: (r) => <ActiveBadge value={r.is_active} /> },
-      ]}
-      fields={[
-        { name: 'name', label: 'نام محصول' },
-        { name: 'category_id', label: 'دسته', type: 'select', options: catOptions },
-        { name: 'status', label: 'وضعیت', type: 'select', options: STATUSES.map((s) => ({ value: s, label: s })) },
-        { name: 'nature', label: 'ماهیت' },
-        { name: 'kpi', label: 'KPI' },
-        { name: 'description', label: 'توضیحات', type: 'textarea' },
-        { name: 'sort_order', label: 'ترتیب', type: 'number' },
-        { name: 'is_active', label: 'فعال', type: 'checkbox' },
-        { name: 'is_published', label: 'منتشر شده', type: 'checkbox' },
-      ]}
-      toForm={(row) =>
-        row
-          ? {
-              name: row.name,
-              category_id: String(row.category_id),
-              status: row.status,
-              nature: row.nature,
-              kpi: row.kpi,
-              description: row.description || '',
-              sort_order: row.sort_order,
-              is_active: !!row.is_active,
-              is_published: !!row.is_published,
+    <>
+      <ResourcePage
+        title="محصولات"
+        subtitle="مدیریت جزئیات محصولات پرتفوی"
+        endpoint="/api/admin/products"
+        newLabel="محصول جدید"
+        columns={[
+          { key: 'name', label: 'نام' },
+          { key: 'category_id', label: 'دسته', render: (r) => catMap[r.category_id] || r.category_id },
+          { key: 'status', label: 'وضعیت' },
+          { key: 'nature', label: 'ماهیت' },
+          { key: 'kpi', label: 'KPI' },
+          { key: 'is_active', label: 'فعال', render: (r) => <ActiveBadge value={r.is_active} /> },
+        ]}
+        fields={[
+          { name: 'name', label: 'نام محصول' },
+          { name: 'category_id', label: 'دسته', type: 'select', options: catOptions },
+          { name: 'status', label: 'وضعیت', type: 'select', options: STATUSES.map((s) => ({ value: s, label: s })) },
+          { name: 'nature', label: 'ماهیت' },
+          { name: 'kpi', label: 'KPI' },
+          { name: 'description', label: 'توضیحات', type: 'textarea' },
+          { name: 'sort_order', label: 'ترتیب', type: 'number' },
+          { name: 'is_active', label: 'فعال', type: 'checkbox' },
+          { name: 'is_published', label: 'منتشر شده', type: 'checkbox' },
+        ]}
+        toForm={(row) =>
+          row
+            ? {
+                name: row.name,
+                category_id: String(row.category_id),
+                status: row.status,
+                nature: row.nature,
+                kpi: row.kpi,
+                description: row.description || '',
+                sort_order: row.sort_order,
+                is_active: !!row.is_active,
+                is_published: !!row.is_published,
+              }
+            : {
+                name: '',
+                category_id: catOptions[0]?.value || '',
+                status: 'Live',
+                nature: '',
+                kpi: '',
+                description: '',
+                sort_order: 0,
+                is_active: true,
+                is_published: true,
+              }
+        }
+        fromForm={(f) => ({
+          name: f.name,
+          category_id: Number(f.category_id),
+          status: f.status,
+          nature: f.nature,
+          kpi: f.kpi,
+          description: f.description,
+          sort_order: Number(f.sort_order || 0),
+          is_active: f.is_active ? 1 : 0,
+          is_published: f.is_published ? 1 : 0,
+        })}
+        validate={(f) => (!f.name || !f.category_id ? 'نام و دسته الزامی است' : null)}
+        rowActions={(row) => (
+          <Button variant="ghost" onClick={() => setCardsProduct(row)}>
+            کادرها
+          </Button>
+        )}
+      />
+
+      <Modal
+        open={!!cardsProduct}
+        wide
+        title={cardsProduct ? `کادرهای محتوایی — ${cardsProduct.name}` : ''}
+        onClose={() => setCardsProduct(null)}
+      >
+        {cardsProduct ? (
+          <ResourcePage
+            title="کادرهای محتوایی"
+            hidePageHeader
+            endpoint="/api/admin/product-content-cards"
+            queryParams={{ product_id: cardsProduct.id }}
+            newLabel="افزودن کادر"
+            columns={[
+              {
+                key: 'color',
+                label: 'رنگ',
+                render: (r) => (
+                  <span
+                    className="inline-block w-4 h-4 rounded-full border border-slate-200"
+                    style={{ background: r.color || '#9CA3AF' }}
+                  />
+                ),
+              },
+              { key: 'title', label: 'عنوان' },
+              { key: 'icon_key', label: 'آیکون' },
+              { key: 'sort_order', label: 'ترتیب' },
+              { key: 'is_active', label: 'فعال', render: (r) => <ActiveBadge value={r.is_active} /> },
+            ]}
+            fields={[
+              { name: 'title', label: 'عنوان' },
+              { name: 'description', label: 'توضیحات', type: 'textarea' },
+              { name: 'image_url', label: 'آدرس تصویر (URL)' },
+              { name: 'icon_key', label: 'آیکون', type: 'select', options: ICONS },
+              { name: 'color', label: 'رنگ', type: 'color' },
+              { name: 'sort_order', label: 'ترتیب نمایش', type: 'number' },
+              { name: 'is_active', label: 'فعال', type: 'checkbox' },
+              { name: 'is_published', label: 'منتشر شده', type: 'checkbox' },
+            ]}
+            toForm={(row) =>
+              row
+                ? {
+                    title: row.title,
+                    description: row.description || '',
+                    image_url: row.image_url || '',
+                    icon_key: row.icon_key || 'Layers',
+                    color: row.color || '#0057A8',
+                    sort_order: row.sort_order ?? 0,
+                    is_active: !!row.is_active,
+                    is_published: !!row.is_published,
+                  }
+                : {
+                    title: '',
+                    description: '',
+                    image_url: '',
+                    icon_key: 'Layers',
+                    color: '#0057A8',
+                    sort_order: 0,
+                    is_active: true,
+                    is_published: true,
+                  }
             }
-          : {
-              name: '',
-              category_id: catOptions[0]?.value || '',
-              status: 'Live',
-              nature: '',
-              kpi: '',
-              description: '',
-              sort_order: 0,
-              is_active: true,
-              is_published: true,
-            }
-      }
-      fromForm={(f) => ({
-        name: f.name,
-        category_id: Number(f.category_id),
-        status: f.status,
-        nature: f.nature,
-        kpi: f.kpi,
-        description: f.description,
-        sort_order: Number(f.sort_order || 0),
-        is_active: f.is_active ? 1 : 0,
-        is_published: f.is_published ? 1 : 0,
-      })}
-      validate={(f) => (!f.name || !f.category_id ? 'نام و دسته الزامی است' : null)}
-    />
+            fromForm={(f) => ({
+              product_id: cardsProduct.id,
+              title: f.title,
+              description: f.description || '',
+              image_url: f.image_url || '',
+              icon_key: f.icon_key || 'Layers',
+              color: f.color || '',
+              sort_order: Number(f.sort_order || 0),
+              is_active: f.is_active ? 1 : 0,
+              is_published: f.is_published ? 1 : 0,
+            })}
+            validate={(f) => (!f.title ? 'عنوان الزامی است' : null)}
+            rowActions={(row, { load, show }) => (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={async () => {
+                    try {
+                      await api.post(`/api/admin/product-content-cards/${row.id}/move`, { direction: 'up' });
+                      await load();
+                    } catch (e) {
+                      show(e.message, 'error');
+                    }
+                  }}
+                >
+                  ↑
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={async () => {
+                    try {
+                      await api.post(`/api/admin/product-content-cards/${row.id}/move`, { direction: 'down' });
+                      await load();
+                    } catch (e) {
+                      show(e.message, 'error');
+                    }
+                  }}
+                >
+                  ↓
+                </Button>
+              </>
+            )}
+          />
+        ) : null}
+      </Modal>
+    </>
   );
 }
 

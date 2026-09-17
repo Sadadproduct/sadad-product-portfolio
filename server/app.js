@@ -233,11 +233,14 @@ export async function createApp() {
       if (req.query.active === '1' || req.query.active === '0') {
         rows = rows.filter((r) => Number(r.is_active) === Number(req.query.active));
       }
-      if (req.query.published === '1' || req.query.published === '0') {
-        rows = rows.filter((r) => Number(r.is_published) === Number(req.query.published));
-      }
-      res.json({ items: rows.map(out) });
-    });
+    if (req.query.published === '1' || req.query.published === '0') {
+      rows = rows.filter((r) => Number(r.is_published) === Number(req.query.published));
+    }
+    if (req.query.product_id != null && req.query.product_id !== '') {
+      rows = rows.filter((r) => Number(r.product_id) === Number(req.query.product_id));
+    }
+    res.json({ items: rows.map(out) });
+  });
 
     router.get('/:id', async (req, res) => {
       const row = await db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(req.params.id);
@@ -428,6 +431,51 @@ export async function createApp() {
     const items = (await db.prepare(`SELECT * FROM products WHERE category_id = ? ORDER BY sort_order, id`).all(req.params.categoryId)).map(withDraftOverlay);
     res.json({ items });
   });
+
+  app.post('/api/admin/product-content-cards/:id/move', requireRole('admin', 'editor'), async (req, res) => {
+    const id = Number(req.params.id);
+    const dir = req.body?.direction;
+    const card = await db.prepare(`SELECT * FROM product_content_cards WHERE id = ?`).get(id);
+    if (!card) return res.status(404).json({ error: 'یافت نشد' });
+    const siblings = await db
+      .prepare(`SELECT * FROM product_content_cards WHERE product_id = ? ORDER BY sort_order ASC, id ASC`)
+      .all(card.product_id);
+    const idx = siblings.findIndex((r) => r.id === id);
+    const swapWith = dir === 'up' ? idx - 1 : idx + 1;
+    if (idx < 0 || swapWith < 0 || swapWith >= siblings.length) return res.json({ ok: true });
+    const a = siblings[idx];
+    const b = siblings[swapWith];
+    await db.prepare(`UPDATE product_content_cards SET sort_order = ? WHERE id = ?`).run(b.sort_order, a.id);
+    await db.prepare(`UPDATE product_content_cards SET sort_order = ? WHERE id = ?`).run(a.sort_order, b.id);
+    await writeAudit(db, {
+      userId: req.user.sub,
+      action: 'UPDATE',
+      entity: 'product_content_cards',
+      entityId: id,
+      entityName: a.title,
+      detail: `reorder_${dir}`,
+    });
+    res.json({ ok: true });
+  });
+
+  app.use(
+    '/api/admin/product-content-cards',
+    crudRouter('product_content_cards', {
+      searchable: ['title', 'description'],
+      entity: 'product_content_cards',
+      mapIn: (body) => ({
+        product_id: Number(body.product_id),
+        title: body.title,
+        description: body.description || '',
+        image_url: body.image_url || body.image || '',
+        icon_key: body.icon_key || body.icon || 'Layers',
+        color: body.color || '',
+        sort_order: Number(body.sort_order ?? 0),
+        is_active: body.is_active === false || body.is_active === 0 ? 0 : 1,
+        is_published: body.is_published === false || body.is_published === 0 ? 0 : 1,
+      }),
+    })
+  );
 
   app.use(
     '/api/admin/pdi',

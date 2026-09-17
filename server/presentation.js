@@ -127,6 +127,26 @@ export async function buildPresentation(db, { draft = false } = {}) {
     draft
   );
 
+  const contentCardRows = mapRows(
+    await db
+      .prepare(`SELECT * FROM product_content_cards WHERE ${pubFilter} ORDER BY sort_order ASC, id ASC`)
+      .all(),
+    draft
+  );
+  const cardsByProduct = {};
+  for (const c of contentCardRows) {
+    const pid = c.product_id;
+    if (!cardsByProduct[pid]) cardsByProduct[pid] = [];
+    cardsByProduct[pid].push({
+      id: c.id,
+      title: c.title,
+      description: c.description || '',
+      imageUrl: c.image_url || '',
+      icon: c.icon_key || 'Layers',
+      color: c.color || '',
+    });
+  }
+
   const portfolio = {};
   for (const cat of categories) {
     const catProducts = products.filter((p) => p.category_id === cat.id);
@@ -141,6 +161,7 @@ export async function buildPresentation(db, { draft = false } = {}) {
         kpi: p.kpi,
         nature: p.nature,
         description: p.description || '',
+        contentCards: cardsByProduct[p.id] || [],
       })),
     };
   }
